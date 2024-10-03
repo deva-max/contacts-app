@@ -12,6 +12,26 @@ class GeneralController extends Controller
         return view('welcome');
     }
 
+    public function store(Request $request) {
+        // Validate the request
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'lastName' => 'required|string|max:255',
+            'phone' => 'required|string|max:15',
+        ]);
+    
+        // Create a new user
+        $user = Contacts::create([
+            'name' => $request->name,
+            'last_name' => $request->lastName,
+            'phone' => $request->phone,
+        ]);
+    
+        // Return a success response
+        return response()->json(['success' => true, 'message' => 'User saved successfully!', 'data' => $user]);
+    }
+    
+
     public function get_contacts(){
         return response()->json(Contacts::all());
     }

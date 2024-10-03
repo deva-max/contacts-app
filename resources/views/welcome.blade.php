@@ -24,6 +24,19 @@
     background-color: #0d6efd; /* Bootstrap primary color */
     border-color: #0d6efd; /* Same as background color */
 }
+#userModal .btn-primary {
+    background-color: #0d6efd; /* Bootstrap primary color */
+    border-color: #0d6efd; /* Same as background color */
+    color: white; /* Text color */
+}
+
+#userModal .btn-secondary {
+    background-color: #6c757d; /* Default Bootstrap secondary color */
+    border-color: #6c757d; /* Same as background color */
+    color: white; /* Text color */
+}
+
+
 
 </style>
 
@@ -194,9 +207,9 @@
 
                     <div class="container mt-5">
         <h1 class="mb-4 text-center">User List</h1>
-        <button id="addUserBtn" class="btn btn-primary mb-3">Add</button>
         <input type="file" id="xmlFileInput" accept=".xml" class="mb-3">
         <button id="importXmlBtn" class="btn btn-success mb-3">Import XML</button>
+        <button id="addUserBtn" class="btn btn-primary mb-3" data-toggle="modal" data-target="#userModal">Add</button> 
         <div class="table-responsive">
             <table id="usersTable" class="table table-striped table-bordered">
                 <thead class="thead-light">
@@ -211,6 +224,38 @@
                
             </table>
         </div>
+
+         <!-- Modal -->
+            <div class="modal fade" id="userModal" tabindex="-1" role="dialog" aria-labelledby="userModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="userModalLabel">Add User</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="name">Name</label>
+                                <input type="text" class="form-control" id="name" placeholder="Enter name">
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" class="form-control" id="lastName" placeholder="Enter last name">
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone</label>
+                                <input type="text" class="form-control" id="phone" placeholder="Enter phone">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="button" id="saveUserBtn" class="btn btn-primary">Save User</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
     </div>
 
     <!-- Edit User Modal -->
@@ -250,6 +295,70 @@
                     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
                     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
                     <script>
+                        document.getElementById('saveUserBtn').addEventListener('click', function() {
+                        // Get user input values
+                        var name = document.getElementById('name').value;
+                        var lastName = document.getElementById('lastName').value;
+                        var phone = document.getElementById('phone').value;
+
+                        // Check if inputs are not empty
+                        if (name && lastName && phone) {
+                            // AJAX request to save user data
+                            $.ajax({
+                                url: '/add-user', // Change this to your controller's store URL
+                                type: 'POST',
+                                data: {
+                                    name: name,
+                                    lastName: lastName,
+                                    phone: phone
+                                },
+                                success: function(response) {
+                                    // Assuming the response contains the saved user data
+                                    if (response.success) {
+                                        // Create a new row in the table
+                                        var table = document.getElementById('usersTable').getElementsByTagName('tbody')[0];
+                                        var newRow = table.insertRow();
+
+                                        // Insert new cells for the row
+                                        newRow.insertCell(0).textContent = name;
+                                        newRow.insertCell(1).textContent = lastName;
+                                        newRow.insertCell(2).textContent = phone;
+
+                                        // Create Edit and Delete buttons
+                                        var editCell = newRow.insertCell(3);
+                                        var deleteCell = newRow.insertCell(4);
+
+                                        var editButton = document.createElement('button');
+                                        editButton.textContent = 'Edit';
+                                        editButton.className = 'btn btn-warning btn-sm';
+                                        editCell.appendChild(editButton);
+
+                                        var deleteButton = document.createElement('button');
+                                        deleteButton.textContent = 'Delete';
+                                        deleteButton.className = 'btn btn-danger btn-sm';
+                                        deleteCell.appendChild(deleteButton);
+
+                                        // Clear input fields after adding
+                                        document.getElementById('name').value = '';
+                                        document.getElementById('lastName').value = '';
+                                        document.getElementById('phone').value = '';
+
+                                        // Close the modal
+                                        $('#userModal').modal('hide');
+                                    } else {
+                                        alert('Failed to save user: ' + response.message);
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    alert('An error occurred: ' + error);
+                                }
+                            });
+                        } else {
+                            alert('Please fill in all fields');
+                        }
+                    });
+
+
                         $(document).ready(function() {
 
                             $('#importXmlBtn').on('click', function() {

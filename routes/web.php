@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 // });
 
 Route::get('/', [GeneralController::class, 'index'] );
+Route::post('/add-user', [GeneralController::class, 'store'])->name('add.user');
 Route::post('/import-users', [GeneralController::class, 'importUsers'])->name('import.users');
 Route::get('get-contacts', [GeneralController::class, 'get_contacts'])->name('get.contacts');
 Route::get('/users/{id}/edit', [GeneralController::class, 'edit'])->name('users.edit');
