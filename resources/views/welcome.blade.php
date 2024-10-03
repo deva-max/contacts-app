@@ -18,6 +18,15 @@
         <!-- SweetAlert2 CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
+<style>
+    /* Ensure the button retains its primary color by default */
+#editUserForm .btn-primary {
+    background-color: #0d6efd; /* Bootstrap primary color */
+    border-color: #0d6efd; /* Same as background color */
+}
+
+</style>
+
 <!-- SweetAlert2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -185,7 +194,9 @@
 
                     <div class="container mt-5">
         <h1 class="mb-4 text-center">User List</h1>
-        <button id="addUserBtn" class="btn btn-primary mb-3">Add</button> 
+        <button id="addUserBtn" class="btn btn-primary mb-3">Add</button>
+        <input type="file" id="xmlFileInput" accept=".xml" class="mb-3">
+        <button id="importXmlBtn" class="btn btn-success mb-3">Import XML</button>
         <div class="table-responsive">
             <table id="usersTable" class="table table-striped table-bordered">
                 <thead class="thead-light">
@@ -193,6 +204,7 @@
                         <th>Name</th>
                         <th>Last Name</th>
                         <th>Phone</th>
+                        <th>Edit</th>
                         <th>Delete</th>
                     </tr>
                 </thead>
@@ -201,6 +213,37 @@
         </div>
     </div>
 
+    <!-- Edit User Modal -->
+        <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editUserForm">
+                            <div class="mb-3">
+                                <label for="editName" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="editName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editLastName" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="editLastName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editPhone" class="form-label">Phone</label>
+                                <input type="text" class="form-control" id="editPhone" required>
+                            </div>
+                            <input type="hidden" id="editUserId"> <!-- Store user ID -->
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
                     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
                     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
                     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -208,6 +251,63 @@
                     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
                     <script>
                         $(document).ready(function() {
+
+                            $('#importXmlBtn').on('click', function() {
+        var fileInput = $('#xmlFileInput')[0];
+        if (fileInput.files.length === 0) {
+            alert("Please select an XML file.");
+            return;
+        }
+
+        var file = fileInput.files[0];
+        var reader = new FileReader();
+
+        reader.onload = function(e) {
+            var xmlString = e.target.result;
+            parseXml(xmlString);
+        };
+
+        reader.readAsText(file);
+    });
+
+    function parseXml(xmlString) {
+        var parser = new DOMParser();
+        var xmlDoc = parser.parseFromString(xmlString, "application/xml");
+        
+        var contacts = xmlDoc.getElementsByTagName("contact");
+        var userData = [];
+
+        for (var i = 0; i < contacts.length; i++) {
+            var name = contacts[i].getElementsByTagName("name")[0].textContent;
+            var lastName = contacts[i].getElementsByTagName("lastName")[0].textContent;
+            var phone = contacts[i].getElementsByTagName("phone")[0].textContent;
+
+            userData.push({
+                name: name,
+                last_name: lastName,
+                phone: phone
+            });
+        }
+
+        // Send the user data to the server
+        importUsers(userData);
+    }
+
+    function importUsers(userData) {
+        $.ajax({
+            url: '/import-users', // Your route for importing users
+            type: 'POST',
+            data: JSON.stringify(userData),
+            contentType: 'application/json',
+            success: function(result) {
+                toastr.success('Users imported successfully!');
+                $('#usersTable').DataTable().ajax.reload(null, false); // Refresh the DataTable
+            },
+            error: function(err) {
+                toastr.error('Error importing users.');
+            }
+        });
+    }
 
                             toastr.options = {
                                 "closeButton": true,
@@ -237,6 +337,12 @@
                                     { data: 'last_name' },
                                     { data: 'phone' },
                                     {
+                                        data: null, // Custom column for Edit button
+                                        render: function(data, type, row) {
+                                            return '<button class="btn btn-warning editUser" data-id="' + row.id + '">Edit</button>';
+                                        }
+                                    },
+                                    {
                                         data: null, // Use null to define a custom column
                                         render: function(data, type, row) {
                                             return '<button class="btn btn-danger deleteUser" data-id="' + row.id + '">Delete</button>';
@@ -250,6 +356,64 @@
                                 headers: {
                                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                                 }
+                            });
+
+                            // Edit button click event
+                            $('#usersTable tbody').on('click', '.editUser', function() {
+                                var userId = $(this).data('id');
+
+                                // Here you can either fetch user details and populate a modal form
+                                // Or redirect to another page to edit the user
+                                $.ajax({
+                                    url: '/users/' + userId + '/edit', // Adjust the URL according to your route
+                                    type: 'GET',
+                                    success: function(data) {
+                                        // Populate a modal or a form with the user data
+                                        // Example: $('#editName').val(data.name);
+                                        // Show the modal
+                                        if (!data.error) {
+                                            // Populate modal fields with user data
+                                            $('#editName').val(data.name);
+                                            $('#editLastName').val(data.last_name);
+                                            $('#editPhone').val(data.phone);
+                                            $('#editUserId').val(userId); // Set the hidden user ID
+                                            $('#editUserModal').modal('show'); // Show the modal
+                                        } else {
+                                            toastr.error(data.error); // Show error if user not found
+                                        }
+                                    },
+                                    error: function(err) {
+                                        toastr.error('Error fetching user details.');
+                                    }
+                                });
+                            });
+
+                            // Handle form submission
+                            $('#editUserForm').on('submit', function(e) {
+                                e.preventDefault(); // Prevent default form submission
+
+                                var userId = $('#editUserId').val(); // Get the user ID from the hidden input
+                                var userData = {
+                                    name: $('#editName').val(),
+                                    last_name: $('#editLastName').val(),
+                                    phone: $('#editPhone').val(),
+                                };
+
+                                $.ajax({
+                                    url: '/users/' + userId, // Adjust the URL according to your route
+                                    type: 'PUT', // Use PUT to update the user
+                                    data: userData,
+                                    success: function(result) {
+                                        toastr.success('User updated successfully!'); // Show success message
+                                        $('#editUserModal').modal('hide'); // Hide the modal
+                                        // Optionally reload your DataTable
+                                        // Refresh the DataTable without resetting pagination
+                                        $('#usersTable').DataTable().ajax.reload(null, false);
+                                    },
+                                    error: function(err) {
+                                        toastr.error('Error updating user.'); // Show error message
+                                    }
+                                });
                             });
 
                             // Delete user event
