@@ -315,36 +315,13 @@
                                 success: function(response) {
                                     // Assuming the response contains the saved user data
                                     if (response.success) {
-                                        // Create a new row in the table
-                                        var table = document.getElementById('usersTable').getElementsByTagName('tbody')[0];
-                                        var newRow = table.insertRow();
-
-                                        // Insert new cells for the row
-                                        newRow.insertCell(0).textContent = name;
-                                        newRow.insertCell(1).textContent = lastName;
-                                        newRow.insertCell(2).textContent = phone;
-
-                                        // Create Edit and Delete buttons
-                                        var editCell = newRow.insertCell(3);
-                                        var deleteCell = newRow.insertCell(4);
-
-                                        var editButton = document.createElement('button');
-                                        editButton.textContent = 'Edit';
-                                        editButton.className = 'btn btn-warning btn-sm';
-                                        editCell.appendChild(editButton);
-
-                                        var deleteButton = document.createElement('button');
-                                        deleteButton.textContent = 'Delete';
-                                        deleteButton.className = 'btn btn-danger btn-sm';
-                                        deleteCell.appendChild(deleteButton);
-
-                                        // Clear input fields after adding
-                                        document.getElementById('name').value = '';
-                                        document.getElementById('lastName').value = '';
-                                        document.getElementById('phone').value = '';
+                                        toastr.success('User added successfully!');
+                                        $('#usersTable').DataTable().ajax.reload(null, false); // Refresh the DataTable
 
                                         // Close the modal
                                         $('#userModal').modal('hide');
+
+                                        
                                     } else {
                                         alert('Failed to save user: ' + response.message);
                                     }
