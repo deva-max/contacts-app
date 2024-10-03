@@ -28,9 +28,9 @@ return new class extends Migration
         });
 
         Schema::create('sessions', function (Blueprint $table) {
-            $table->id();
+            $table->string('id')->primary()->charset('utf8')->collation('utf8_unicode_ci');
             $table->foreignId('user_id')->nullable()->index();
-            $table->string('ip_address', 45)->nullable()->charset('utf8')->collation('utf8_unicode_ci');
+            $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');
             $table->integer('last_activity')->index();
