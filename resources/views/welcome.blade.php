@@ -246,7 +246,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="phone">Phone</label>
-                                <input type="text" class="form-control" id="phone" placeholder="Enter phone">
+                                <input type="text" class="form-control" id="phone" placeholder="Enter phone" pattern="^\+\d{1,3}[- ]?\d{4,14}$" title="Please enter a valid phone number including country code (e.g., +123 4567890123)">
+                                <small id="phoneError" class="text-danger" style="display: none;">Please enter a valid phone number.</small>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -277,8 +278,9 @@
                                 <input type="text" class="form-control" id="editLastName" required>
                             </div>
                             <div class="mb-3">
-                                <label for="editPhone" class="form-label">Phone</label>
-                                <input type="text" class="form-control" id="editPhone" required>
+                            <label for="editPhone" class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="editPhone" required>
+                            <small id="editPhoneError" class="text-danger" style="display: none;">Please enter a valid phone number with country code.</small>
                             </div>
                             <input type="hidden" id="editUserId"> <!-- Store user ID -->
                             <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -296,10 +298,24 @@
                     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
                     <script>
                         document.getElementById('saveUserBtn').addEventListener('click', function() {
+                        // Phone validation regex for country code + number
+                        const phoneRegex = /^\+\d{1,3}[- ]?\d{4,14}$/;
+
+                        // Get the phone input value
+                        var phone = $('#phone').val();
+                        var isValidPhone = phoneRegex.test(phone);
+
+                        // Validate phone number
+                        if (!isValidPhone) {
+                            $('#phoneError').show(); // Show error message
+                            return; // Stop execution if the phone number is invalid
+                        } else {
+                            $('#phoneError').hide(); // Hide error message if valid
+                        }
+
                         // Get user input values
                         var name = document.getElementById('name').value;
                         var lastName = document.getElementById('lastName').value;
-                        var phone = document.getElementById('phone').value;
 
                         // Check if inputs are not empty
                         if (name && lastName && phone) {
@@ -320,8 +336,6 @@
 
                                         // Close the modal
                                         $('#userModal').modal('hide');
-
-                                        
                                     } else {
                                         alert('Failed to save user: ' + response.message);
                                     }
@@ -334,6 +348,7 @@
                             alert('Please fill in all fields');
                         }
                     });
+
 
 
                         $(document).ready(function() {
@@ -478,6 +493,20 @@
                             $('#editUserForm').on('submit', function(e) {
                                 e.preventDefault(); // Prevent default form submission
 
+                                const phoneRegex = /^\+\d{1,3}[- ]?\d{4,14}$/;
+
+                                // Get the phone input value
+                                var phone = $('#editPhone').val();
+                                var isValidPhone = phoneRegex.test(phone);
+
+                                // Validate phone number
+                                if (!isValidPhone) {
+                                    $('#editPhoneError').show(); // Show error message
+                                    return; // Stop execution if the phone number is invalid
+                                } else {
+                                    $('#editPhoneError').hide(); // Hide error message if valid
+                                }
+                                
                                 var userId = $('#editUserId').val(); // Get the user ID from the hidden input
                                 var userData = {
                                     name: $('#editName').val(),
